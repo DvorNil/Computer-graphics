@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Лабораторная работа 1 — Цветовые модели (CMYK · RGB · HSV)</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --panel-border: #d8dbe1;
+    --text: #1e1f24;
+    --muted: #6b7280;
+    --accent: #2f6fdd;
+    --input-bg: #f0f1f4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); margin-bottom: 20px; font-size: 0.9rem; }
+
+  #colorPreview {
+    width: 100%;
+    max-width: 900px;
+    height: 90px;
+    border-radius: 10px;
+    border: 1px solid var(--panel-border);
+    margin-bottom: 20px;
+    transition: background-color 0.15s;
+  }
+
+  .models {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 16px;
+    width: 100%;
+    max-width: 900px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card h2 { font-size: 1rem; margin: 0 0 12px; letter-spacing: 0.5px; }
+  .card h2 .badge {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: normal;
+    margin-left: 6px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .row label {
+    width: 20px;
+    font-weight: bold;
+    text-align: center;
+  }
+  .row input[type="number"] {
+    width: 64px;
+    background: var(--input-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 5px 6px;
+    font-size: 0.85rem;
+  }
+  .row input[type="range"] { flex: 1; accent-color: var(--accent); }
+
+  .picker-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .picker-row label { width: auto; font-size: 0.85rem; color: var(--muted); }
+  input[type="color"] {
+    width: 100%;
+    height: 36px;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    background: var(--input-bg);
+    padding: 2px;
+    cursor: pointer;
+  }
+  .hex-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .hex-row label { font-size: 0.85rem; color: var(--muted); width: auto; }
+  .hex-row input {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 5px 8px;
+    font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+<h1>Цветовые модели</h1>
+
+<div id="colorPreview"></div>
+
+<div class="models">
+
+  <div class="card">
+    <h2>RGB<span class="badge">0–255</span></h2>
+    <div class="row"><label style="color:#e03131">R</label>
+      <input type="range" min="0" max="255" step="1" id="r-slider">
+      <input type="number" min="0" max="255" step="1" id="r-num">
+    </div>
+    <div class="row"><label style="color:#2f9e44">G</label>
+      <input type="range" min="0" max="255" step="1" id="g-slider">
+      <input type="number" min="0" max="255" step="1" id="g-num">
+    </div>
+    <div class="row"><label style="color:#5b9dff">B</label>
+      <input type="range" min="0" max="255" step="1" id="b-slider">
+      <input type="number" min="0" max="255" step="1" id="b-num">
+    </div>
+    <div class="hex-row">
+      <label>HEX</label>
+      <input type="text" id="hex" spellcheck="false" placeholder="#RRGGBB">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>CMYK<span class="badge">0–100%</span></h2>
+    <div class="row"><label>C</label>
+      <input type="range" min="0" max="100" step="1" id="c-slider">
+      <input type="number" min="0" max="100" step="1" id="c-num">
+    </div>
+    <div class="row"><label>M</label>
+      <input type="range" min="0" max="100" step="1" id="m-slider">
+      <input type="number" min="0" max="100" step="1" id="m-num">
+    </div>
+    <div class="row"><label>Y</label>
+      <input type="range" min="0" max="100" step="1" id="y-slider">
+      <input type="number" min="0" max="100" step="1" id="y-num">
+    </div>
+    <div class="row"><label>K</label>
+      <input type="range" min="0" max="100" step="1" id="k-slider">
+      <input type="number" min="0" max="100" step="1" id="k-num">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>HSV<span class="badge">H 0–360 · S,V 0–100%</span></h2>
+    <div class="row"><label>H</label>
+      <input type="range" min="0" max="360" step="1" id="h-slider">
+      <input type="number" min="0" max="360" step="1" id="h-num">
+    </div>
+    <div class="row"><label>S</label>
+      <input type="range" min="0" max="100" step="1" id="s-slider">
+      <input type="number" min="0" max="100" step="1" id="s-num">
+    </div>
+    <div class="row"><label>V</label>
+      <input type="range" min="0" max="100" step="1" id="v-slider">
+      <input type="number" min="0" max="100" step="1" id="v-num">
+    </div>
+    <div class="picker-row">
+      <label>Палитра:</label>
+      <input type="color" id="picker">
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Преобразования цветовых моделей
+
+function rgbToHsv(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === r) h = 60 * (((g - b) / d) % 6);
+    else if (max === g) h = 60 * ((b - r) / d + 2);
+    else h = 60 * ((r - g) / d + 4);
+  }
+  if (h < 0) h += 360;
+  const s = max === 0 ? 0 : (d / max) * 100;
+  const v = max * 100;
+  return { h: Math.round(h), s: Math.round(s), v: Math.round(v) };
+}
+
+function hsvToRgb(h, s, v) {
+  s /= 100; v /= 100;
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v - c;
+  let rp = 0, gp = 0, bp = 0;
+  if (h < 60)       { rp = c; gp = x; }
+  else if (h < 120) { rp = x; gp = c; }
+  else if (h < 180) { gp = c; bp = x; }
+  else if (h < 240) { gp = x; bp = c; }
+  else if (h < 300) { rp = x; bp = c; }
+  else              { rp = c; bp = x; }
+  return {
+    r: Math.round((rp + m) * 255),
+    g: Math.round((gp + m) * 255),
+    b: Math.round((bp + m) * 255)
+  };
+}
+
+function rgbToCmyk(r, g, b) {
+  const rn = r / 255, gn = g / 255, bn = b / 255;
+  const k = 1 - Math.max(rn, gn, bn);
+  if (k === 1) return { c: 0, m: 0, y: 0, k: 100 };
+  const c = (1 - rn - k) / (1 - k);
+  const m = (1 - gn - k) / (1 - k);
+  const y = (1 - bn - k) / (1 - k);
+  return {
+    c: Math.round(c * 100),
+    m: Math.round(m * 100),
+    y: Math.round(y * 100),
+    k: Math.round(k * 100)
+  };
+}
+
+function cmykToRgb(c, m, y, k) {
+  const r = 255 * (1 - c / 100) * (1 - k / 100);
+  const g = 255 * (1 - m / 100) * (1 - k / 100);
+  const b = 255 * (1 - y / 100) * (1 - k / 100);
+  return {
+    r: Math.min(255, Math.max(0, Math.round(r))),
+    g: Math.min(255, Math.max(0, Math.round(g))),
+    b: Math.min(255, Math.max(0, Math.round(b)))
+  };
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function hexToRgb(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+// Состояние и обновление интерфейса 
+
+const $ = id => document.getElementById(id);
+const preview = $('colorPreview');
+let current = { r: 91, g: 157, b: 255 }; // начальный цвет
+let editingNum = null; // числовое поле, в котором сейчас идёт ввод
+
+document.querySelectorAll('input[type="number"]').forEach(inp => {
+  inp.addEventListener('focus', () => { editingNum = inp; });
+  inp.addEventListener('blur', () => { editingNum = null; updateUI(); });
+});
+
+function updateUI() {
+  const { r, g, b } = current;
+  const hsv = rgbToHsv(r, g, b);
+  const cmyk = rgbToCmyk(r, g, b);
+
+  const set = (id, val) => {
+    $(id + '-slider').value = val;
+    const num = $(id + '-num');
+    if (num !== editingNum) num.value = val;
+  };
+  set('r', r); set('g', g); set('b', b);
+  set('c', cmyk.c); set('m', cmyk.m); set('y', cmyk.y); set('k', cmyk.k);
+  set('h', hsv.h); set('s', hsv.s); set('v', hsv.v);
+
+  $('hex').value = rgbToHex(r, g, b);
+  $('picker').value = rgbToHex(r, g, b).toLowerCase();
+  preview.style.backgroundColor = rgbToHex(r, g, b);
+}
+
+// Изменение через RGB
+['r', 'g', 'b'].forEach(ch => {
+  const apply = val => {
+    val = Math.min(255, Math.max(0, Math.round(Number(val) || 0)));
+    current[ch] = val;
+    updateUI();
+  };
+  $(ch + '-slider').addEventListener('input', e => apply(e.target.value));
+  $(ch + '-num').addEventListener('input', e => apply(e.target.value));
+});
+
+// Изменение через CMYK
+['c', 'm', 'y', 'k'].forEach(ch => {
+  const apply = val => {
+    val = Math.min(100, Math.max(0, Math.round(Number(val) || 0)));
+    current = (() => {
+      const c = ch === 'c' ? val : Math.min(100, Math.max(0, Number($('c-num').value) || 0));
+      const m = ch === 'm' ? val : Math.min(100, Math.max(0, Number($('m-num').value) || 0));
+      const y = ch === 'y' ? val : Math.min(100, Math.max(0, Number($('y-num').value) || 0));
+      const k = ch === 'k' ? val : Math.min(100, Math.max(0, Number($('k-num').value) || 0));
+      return cmykToRgb(c, m, y, k);
+    })();
+    updateUI();
+  };
+  $(ch + '-slider').addEventListener('input', e => apply(e.target.value));
+  $(ch + '-num').addEventListener('input', e => apply(e.target.value));
+});
+
+// Изменение через HSV
+['h', 's', 'v'].forEach(ch => {
+  const max = ch === 'h' ? 360 : 100;
+  const apply = val => {
+    val = Math.min(max, Math.max(0, Math.round(Number(val) || 0)));
+    const h = ch === 'h' ? val : Math.min(360, Math.max(0, Number($('h-num').value) || 0));
+    const s = ch === 's' ? val : Math.min(100, Math.max(0, Number($('s-num').value) || 0));
+    const v = ch === 'v' ? val : Math.min(100, Math.max(0, Number($('v-num').value) || 0));
+    current = hsvToRgb(h, s, v);
+    updateUI();
+  };
+  $(ch + '-slider').addEventListener('input', e => apply(e.target.value));
+  $(ch + '-num').addEventListener('input', e => apply(e.target.value));
+});
+
+// HEX-поле
+$('hex').addEventListener('input', e => {
+  const rgb = hexToRgb(e.target.value);
+  if (rgb) { current = rgb; updateUI(); }
+});
+
+// Палитра
+$('picker').addEventListener('input', e => {
+  const rgb = hexToRgb(e.target.value);
+  if (rgb) { current = rgb; updateUI(); }
+});
+
+updateUI();
+</script>
+</body>
+</html>
