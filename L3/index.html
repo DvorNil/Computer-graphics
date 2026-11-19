@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Лабораторная работа 3 — Базовые растровые алгоритмы</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --panel-border: #d8dbe1;
+    --text: #1e1f24;
+    --muted: #6b7280;
+    --accent: #2f6fdd;
+    --input-bg: #f0f1f4;
+    --c-step: #e03131;
+    --c-dda: #2f9e44;
+    --c-bres: #2f6fdd;
+    --c-circle: #f08c00;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); margin-bottom: 20px; font-size: 0.9rem; }
+
+  .wrap {
+    width: 100%;
+    max-width: 960px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card h2 { font-size: 1rem; margin: 0 0 12px; letter-spacing: 0.5px; }
+  .card h2 .badge {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: normal;
+    margin-left: 6px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .row label { font-size: 0.85rem; min-width: 110px; }
+  .row label.inline { min-width: auto; }
+  .row input[type="number"] {
+    width: 64px;
+    background: var(--input-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 5px 6px;
+    font-size: 0.85rem;
+  }
+  .row input[type="range"] { flex: 1; min-width: 120px; max-width: 320px; accent-color: var(--accent); }
+  .row .val {
+    min-width: 52px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .algo-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    background: var(--input-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle input { accent-color: var(--accent); margin: 0; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  canvas#cv {
+    display: block;
+    width: 100%;
+    max-width: 912px;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  .note { font-size: 0.8rem; color: var(--muted); line-height: 1.55; margin-top: 8px; }
+  .note b { color: var(--text); }
+
+  button {
+    background: var(--input-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.82rem;
+    margin-top: 10px;
+  }
+  th, td {
+    border: 1px solid var(--panel-border);
+    padding: 4px 8px;
+    text-align: center;
+    font-family: monospace;
+  }
+  th { background: var(--input-bg); font-family: "Segoe UI", Arial, sans-serif; }
+  td.l { font-family: "Segoe UI", Arial, sans-serif; text-align: left; }
+  .mono { font-family: monospace; }
+
+  .step-tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; align-items: start; }
+  .step-tables h3 { font-size: 0.85rem; margin: 8px 0 6px; }
+  .step-tables table { margin-top: 0; }
+  .scroll { max-height: 260px; overflow: auto; }
+</style>
+</head>
+<body>
+
+<h1>Базовые растровые алгоритмы</h1>
+
+<div class="wrap">
+
+  <!-- Параметры -->
+  <div class="card">
+    <h2>Параметры<span class="badge">целочисленные координаты в декартовой системе</span></h2>
+
+    <div class="row">
+      <label>Отрезок: A(x₁, y₁)</label>
+      <input type="number" id="x1" value="8" min="-60" max="60" step="1">
+      <input type="number" id="y1" value="2" min="-60" max="60" step="1">
+      <label class="inline">B(x₂, y₂)</label>
+      <input type="number" id="x2" value="17" min="-60" max="60" step="1">
+      <input type="number" id="y2" value="12" min="-60" max="60" step="1">
+    </div>
+    <div class="row">
+      <label>Окружность: C(x₀, y₀), R</label>
+      <input type="number" id="cx" value="-12" min="-60" max="60" step="1">
+      <input type="number" id="cy" value="8" min="-60" max="60" step="1">
+      <input type="number" id="r" value="8" min="1" max="40" step="1">
+    </div>
+    <div class="row">
+      <label>Отображаемые алгоритмы</label>
+      <div class="algo-toggles">
+        <label class="toggle"><input type="checkbox" id="showStep" checked><span class="dot" style="background:var(--c-step)"></span>Пошаговый</label>
+        <label class="toggle"><input type="checkbox" id="showDda" checked><span class="dot" style="background:var(--c-dda)"></span>ЦДА</label>
+        <label class="toggle"><input type="checkbox" id="showBres" checked><span class="dot" style="background:var(--c-bres)"></span>Брезенхем</label>
+        <label class="toggle"><input type="checkbox" id="showCircle" checked><span class="dot" style="background:var(--c-circle)"></span>Окружность</label>
+      </div>
+    </div>
+    <div class="row">
+      <label>Масштаб (пикселей на единицу)</label>
+      <input type="range" id="scale" min="6" max="36" step="1" value="16">
+      <span class="val" id="scaleVal">16</span>
+    </div>
+  </div>
+
+  <!-- Растровая сетка -->
+  <div class="card">
+    <h2>Растровая сетка<span class="badge">ось y направлена вверх</span></h2>
+    <canvas id="cv" width="912" height="640"></canvas>
+    <div class="note">
+      <b>Привязка координат к сетке:</b> каждая целочисленная точка (i, j) — это ячейка (пиксель)
+      с центром в этой точке, т.е. квадрат [i−0.5; i+0.5] × [j−0.5; j+0.5].
+      Алгоритмы выдают вещественные координаты; растеризация — это округление до ближайшего
+      центра ячейки (отсюда «лесенка»). Точки A, B и центр C отмечены крестиками.
+    </div>
+  </div>
+
+  <!-- Временные характеристики -->
+  <div class="card">
+    <h2>Временные характеристики<span class="badge">performance.now() · усреднение по N прогонам</span></h2>
+    <div class="row">
+      <button id="benchBtn">Измерить время</button>
+      <span class="note" style="margin:0" id="benchInfo">Замер выполняется на текущих входных данных, перед замером делается «разогревочный» прогон.</span>
+    </div>
+    <table id="benchTable" style="display:none">
+      <tr><th>Алгоритм</th><th>Входные данные</th><th>Шагов (точек)</th><th>N прогонов</th><th>Среднее время, мкс</th></tr>
+    </table>
+  </div>
+
+  <!-- Пошаговые вычисления -->
+  <div class="card">
+    <h2>Сопроводительные вычисления<span class="badge">таблицы шагов для текущих данных</span></h2>
+    <div class="step-tables" id="stepTables"></div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+
+// ===================== Алгоритмы =====================
+// Каждый возвращает { pts: [[x,y],...], rows: [...] } — точки для отрисовки и строки таблицы шагов.
+
+// Пошаговый алгоритм
+function stepLine(x1, y1, x2, y2) {
+  const pts = [], rows = [];
+  const dx = x2 - x1, dy = y2 - y1;
+  let i = 0;
+  if (Math.abs(dx) >= Math.abs(dy)) {           // идём по x
+    const k = dy / dx, sx = dx >= 0 ? 1 : -1;
+    for (let x = x1; sx > 0 ? x <= x2 : x >= x2; x += sx, i++) {
+      const y = y1 + k * (x - x1);
+      rows.push({ i, cyc: x, dep: y.toFixed(2), res: Math.round(y), byX: true });
+      pts.push([x, Math.round(y)]);
+    }
+  } else {                                       // идём по y
+    const k = dx / dy, sy = dy >= 0 ? 1 : -1;
+    for (let y = y1; sy > 0 ? y <= y2 : y >= y2; y += sy, i++) {
+      const x = x1 + k * (y - y1);
+      rows.push({ i, cyc: y, dep: x.toFixed(2), res: Math.round(x), byX: false });
+      pts.push([Math.round(x), y]);
+    }
+  }
+  return { pts, rows };
+}
+
+// Алгоритм ЦДА (цифровой дифференциальный анализатор)
+function ddaLine(x1, y1, x2, y2) {
+  const pts = [], rows = [];
+  const dx = x2 - x1, dy = y2 - y1;
+  const L = Math.max(Math.abs(dx), Math.abs(dy));
+  const sx = dx / L, sy = dy / L;
+  let x = x1, y = y1;
+  for (let i = 0; i <= L; i++) {
+    const xr = Math.round(x), yr = Math.round(y);
+    rows.push({ i, x: x.toFixed(2), y: y.toFixed(2), xr, yr });
+    pts.push([xr, yr]);
+    x += sx; y += sy;
+  }
+  return { pts, rows };
+}
+
+// Алгоритм Брезенхема (отрезок, целочисленный)
+function bresenhamLine(x1, y1, x2, y2) {
+  const pts = [], rows = [];
+  const dx = Math.abs(x2 - x1), dy = Math.abs(y2 - y1);
+  const sx = x1 < x2 ? 1 : -1, sy = y1 < y2 ? 1 : -1;
+  let err = dx - dy, i = 0;
+  while (true) {
+    rows.push({ i, x: x1, y: y1, err });
+    pts.push([x1, y1]);
+    if (x1 === x2 && y1 === y2) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; x1 += sx; }
+    if (e2 < dx)  { err += dx; y1 += sy; }
+    i++;
+  }
+  return { pts, rows };
+}
+
+// Алгоритм Брезенхема (окружность, 8-симметричность)
+function bresenhamCircle(cx, cy, r) {
+  const pts = [], rows = [];
+  let x = 0, y = r, d = 3 - 2 * r, i = 0;
+  while (x <= y) {
+    rows.push({ i, x, y, d });
+    pts.push(
+      [cx + x, cy + y], [cx - x, cy + y], [cx + x, cy - y], [cx - x, cy - y],
+      [cx + y, cy + x], [cx - y, cy + x], [cx + y, cy - x], [cx - y, cy - x]
+    );
+    if (d < 0) d += 4 * x + 6;
+    else { d += 4 * (x - y) + 10; y--; }
+    x++; i++;
+  }
+  return { pts, rows };
+}
+
+// ===================== Отрисовка =====================
+const cv = $('cv'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height, OX = W / 2, OY = H / 2;
+
+function readInputs() {
+  return {
+    x1: Math.round(+$('x1').value), y1: Math.round(+$('y1').value),
+    x2: Math.round(+$('x2').value), y2: Math.round(+$('y2').value),
+    cx: Math.round(+$('cx').value), cy: Math.round(+$('cy').value),
+    r:  Math.max(1, Math.round(+$('r').value)),
+    s:  +$('scale').value
+  };
+}
+
+function drawGrid(s) {
+  const xMax = W / 2 / s, yMax = H / 2 / s;
+  const labelEvery = s >= 18 ? 1 : (s >= 9 ? 2 : 5);
+  ctx.clearRect(0, 0, W, H);
+  ctx.font = '11px "Segoe UI", Arial';
+
+  // линии сетки
+  ctx.strokeStyle = '#e9ebef'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = Math.ceil(-xMax); i <= xMax; i++) { ctx.moveTo(OX + i * s + .5, 0); ctx.lineTo(OX + i * s + .5, H); }
+  for (let j = Math.ceil(-yMax); j <= yMax; j++) { ctx.moveTo(0, OY - j * s + .5); ctx.lineTo(W, OY - j * s + .5); }
+  ctx.stroke();
+
+  // оси со стрелками
+  ctx.strokeStyle = '#9aa0aa'; ctx.fillStyle = '#9aa0aa'; ctx.lineWidth = 1.5;
+  const ax = xMax * s - 10, ay = yMax * s - 10;
+  ctx.beginPath();
+  ctx.moveTo(0, OY); ctx.lineTo(OX + ax, OY);
+  ctx.moveTo(OX, H); ctx.lineTo(OX, OY - ay);
+  ctx.stroke();
+  ctx.beginPath(); // стрелка оси x
+  ctx.moveTo(OX + ax, OY); ctx.lineTo(OX + ax - 8, OY - 4); ctx.lineTo(OX + ax - 8, OY + 4);
+  ctx.moveTo(OX, OY - ay); ctx.lineTo(OX - 4, OY - ay + 8); ctx.lineTo(OX + 4, OY - ay + 8);
+  ctx.fill();
+
+  // подписи осей и делений
+  ctx.fillStyle = '#6b7280';
+  ctx.fillText('x', OX + ax - 14, OY - 6);
+  ctx.fillText('y', OX + 8, OY - ay + 14);
+  for (let i = Math.ceil(-xMax); i <= xMax; i++) {
+    if (i === 0 || i % labelEvery !== 0) continue;
+    ctx.fillText(String(i), OX + i * s - 6, OY + 14);
+  }
+  for (let j = Math.ceil(-yMax); j <= yMax; j++) {
+    if (j === 0 || j % labelEvery !== 0) continue;
+    ctx.fillText(String(j), OX - 14, OY - j * s + 4);
+  }
+}
+
+function drawPixel(x, y, s, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(OX + (x - 0.5) * s, OY - (y + 0.5) * s, s, s);
+}
+
+function drawCross(x, y, s, color) {
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  const px = OX + x * s, py = OY - y * s;
+  ctx.beginPath();
+  ctx.moveTo(px - 6, py); ctx.lineTo(px + 6, py);
+  ctx.moveTo(px, py - 6); ctx.lineTo(px, py + 6);
+  ctx.stroke();
+}
+
+function render() {
+  const p = readInputs();
+  $('scaleVal').textContent = p.s;
+  drawGrid(p.s);
+
+  if ($('showStep').checked)    stepLine(p.x1, p.y1, p.x2, p.y2).pts.forEach(([x, y]) => drawPixel(x, y, p.s, 'rgba(224,49,49,0.55)'));
+  if ($('showDda').checked)     ddaLine(p.x1, p.y1, p.x2, p.y2).pts.forEach(([x, y]) => drawPixel(x, y, p.s, 'rgba(47,158,68,0.45)'));
+  if ($('showBres').checked)    bresenhamLine(p.x1, p.y1, p.x2, p.y2).pts.forEach(([x, y]) => drawPixel(x, y, p.s, 'rgba(47,111,221,0.55)'));
+  if ($('showCircle').checked)  bresenhamCircle(p.cx, p.cy, p.r).pts.forEach(([x, y]) => drawPixel(x, y, p.s, 'rgba(240,140,0,0.7)'));
+
+  drawCross(p.x1, p.y1, p.s, '#1e1f24');
+  drawCross(p.x2, p.y2, p.s, '#1e1f24');
+  drawCross(p.cx, p.cy, p.s, '#f08c00');
+
+  renderStepTables(p);
+}
+
+// ===================== Таблицы шагов =====================
+function tableHTML(head, rows, maxRows) {
+  let h = '<table><tr>' + head.map(t => `<th>${t}</th>`).join('') + '</tr>';
+  rows.slice(0, maxRows).forEach(r => { h += '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>'; });
+  if (rows.length > maxRows) h += `<tr><td colspan="${head.length}" style="color:var(--muted)">… ещё ${rows.length - maxRows} шагов</td></tr>`;
+  return h + '</table>';
+}
+
+function renderStepTables(p) {
+  const el = $('stepTables');
+  let html = '';
+  if ($('showStep').checked) {
+    const { rows } = stepLine(p.x1, p.y1, p.x2, p.y2);
+    const head = rows.length && !rows[0].byX
+      ? ['i', 'y (цикл)', 'x вычисл.', 'x округл.']
+      : ['i', 'x (цикл)', 'y вычисл.', 'y округл.'];
+    html += `<div><h3><span class="dot" style="background:var(--c-step)"></span> Пошаговый</h3><div class="scroll">${
+      tableHTML(head, rows.map(r => [r.i, r.cyc, r.dep, r.res]), 32)}</div></div>`;
+  }
+  if ($('showDda').checked) {
+    const { rows } = ddaLine(p.x1, p.y1, p.x2, p.y2);
+    html += `<div><h3><span class="dot" style="background:var(--c-dda)"></span> ЦДА</h3><div class="scroll">${
+      tableHTML(['i', 'x', 'y', 'округл. (x, y)'], rows.map(r => [r.i, r.x, r.y, `(${r.xr}; ${r.yr})`]), 32)}</div></div>`;
+  }
+  if ($('showBres').checked) {
+    const { rows } = bresenhamLine(p.x1, p.y1, p.x2, p.y2);
+    html += `<div><h3><span class="dot" style="background:var(--c-bres)"></span> Брезенхем (отрезок)</h3><div class="scroll">${
+      tableHTML(['i', 'x', 'y', 'd (ошибка)'], rows.map(r => [r.i, r.x, r.y, r.err]), 32)}</div></div>`;
+  }
+  if ($('showCircle').checked) {
+    const { rows } = bresenhamCircle(p.cx, p.cy, p.r);
+    html += `<div><h3><span class="dot" style="background:var(--c-circle)"></span> Брезенхем (окружность)</h3><div class="scroll">${
+      tableHTML(['i', 'x', 'y', 'd'], rows.map(r => [r.i, r.x, r.y, r.d]), 32)}</div>
+      <div class="note">В каждом шаге проставляются 8 точек: (±x, ±y) и (±y, ±x) со смещением (x₀, y₀).</div></div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ===================== Замер времени =====================
+function bench(fn) {
+  fn(); // разогрев
+  const steps = fn().pts.length;
+  const N = Math.min(20000, Math.max(200, Math.round(3e6 / steps)));
+  const t0 = performance.now();
+  for (let i = 0; i < N; i++) fn();
+  const us = (performance.now() - t0) * 1000 / N;
+  return { steps, N, us };
+}
+
+$('benchBtn').addEventListener('click', () => {
+  const p = readInputs();
+  const seg = `(${p.x1};${p.y1})–(${p.x2};${p.y2})`;
+  const res = [
+    ['Пошаговый', seg, bench(() => stepLine(p.x1, p.y1, p.x2, p.y2))],
+    ['ЦДА', seg, bench(() => ddaLine(p.x1, p.y1, p.x2, p.y2))],
+    ['Брезенхем (отрезок)', seg, bench(() => bresenhamLine(p.x1, p.y1, p.x2, p.y2))],
+    ['Брезенхем (окружность)', `C(${p.cx};${p.cy}), R=${p.r}`, bench(() => bresenhamCircle(p.cx, p.cy, p.r))]
+  ];
+  const tbl = $('benchTable');
+  tbl.style.display = 'table';
+  tbl.innerHTML = '<tr><th>Алгоритм</th><th>Входные данные</th><th>Шагов (точек)</th><th>N прогонов</th><th>Среднее время, мкс</th></tr>' +
+    res.map(([name, input, r]) =>
+      `<tr><td class="l">${name}</td><td>${input}</td><td>${r.steps}</td><td>${r.N}</td><td>${r.us.toFixed(2)}</td></tr>`).join('');
+});
+
+// Автообновление при любом изменении
+document.querySelectorAll('input').forEach(inp => inp.addEventListener('input', render));
+render();
+</script>
+</body>
+</html>
